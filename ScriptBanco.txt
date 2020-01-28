@@ -1,0 +1,203 @@
+USE [dbTeste]
+GO
+/****** Object:  Table [dbo].[Cliente]    Script Date: 07/08/2018 03:15:58 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Cliente](
+	[Codigo] [int] IDENTITY(1,1) NOT NULL,
+	[Descricao] [varchar](50) NULL,
+ CONSTRAINT [PK_Cliente] PRIMARY KEY CLUSTERED 
+(
+	[Codigo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ItensVendas]    Script Date: 07/08/2018 03:15:59 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ItensVendas](
+	[Codigo] [int] IDENTITY(1,1) NOT NULL,
+	[Codigo_Venda] [int] NULL,
+	[Codigo_Produto] [int] NULL,
+	[Quantidade] [int] NULL,
+	[Valor] [numeric](18, 2) NULL,
+ CONSTRAINT [PK_ItensVendas] PRIMARY KEY CLUSTERED 
+(
+	[Codigo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Produto]    Script Date: 07/08/2018 03:15:59 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Produto](
+	[Codigo] [int] IDENTITY(1,1) NOT NULL,
+	[Descricao] [nchar](10) NULL,
+	[Codigo_UnidadeMedida] [int] NULL,
+	[Preco] [numeric](18, 2) NULL,
+	[Estoque] [int] NULL,
+ CONSTRAINT [PK_Produto] PRIMARY KEY CLUSTERED 
+(
+	[Codigo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[UnidadeMedida]    Script Date: 07/08/2018 03:15:59 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[UnidadeMedida](
+	[Codigo] [int] IDENTITY(1,1) NOT NULL,
+	[Descricao] [varchar](50) NULL,
+ CONSTRAINT [PK_UnidadeMedida] PRIMARY KEY CLUSTERED 
+(
+	[Codigo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Venda]    Script Date: 07/08/2018 03:15:59 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Venda](
+	[Codigo] [int] IDENTITY(1,1) NOT NULL,
+	[Codigo_Cliente] [int] NULL,
+	[Valor] [numeric](18, 2) NULL,
+	[DataVenda] [datetime] NULL,
+ CONSTRAINT [PK_Vendas] PRIMARY KEY CLUSTERED 
+(
+	[Codigo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[ItensVendas]  WITH CHECK ADD  CONSTRAINT [FK_ItensVendas_Produto] FOREIGN KEY([Codigo_Produto])
+REFERENCES [dbo].[Produto] ([Codigo])
+GO
+ALTER TABLE [dbo].[ItensVendas] CHECK CONSTRAINT [FK_ItensVendas_Produto]
+GO
+ALTER TABLE [dbo].[ItensVendas]  WITH CHECK ADD  CONSTRAINT [FK_ItensVendas_Vendas] FOREIGN KEY([Codigo_Venda])
+REFERENCES [dbo].[Venda] ([Codigo])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[ItensVendas] CHECK CONSTRAINT [FK_ItensVendas_Vendas]
+GO
+ALTER TABLE [dbo].[Produto]  WITH CHECK ADD  CONSTRAINT [FK_Produto_Produto] FOREIGN KEY([Codigo_UnidadeMedida])
+REFERENCES [dbo].[UnidadeMedida] ([Codigo])
+GO
+ALTER TABLE [dbo].[Produto] CHECK CONSTRAINT [FK_Produto_Produto]
+GO
+ALTER TABLE [dbo].[Venda]  WITH CHECK ADD  CONSTRAINT [FK_Venda_Cliente] FOREIGN KEY([Codigo_Cliente])
+REFERENCES [dbo].[Cliente] ([Codigo])
+GO
+ALTER TABLE [dbo].[Venda] CHECK CONSTRAINT [FK_Venda_Cliente]
+GO
+/****** Object:  StoredProcedure [dbo].[ListaVendas]    Script Date: 07/08/2018 03:15:59 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+CREATE   PROCEDURE [dbo].[ListaVendas](@DataIni datetime null, @DataFim datetime null, @CodigoVenda int null)
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+if (@CodigoVenda > 0)
+	SELECT 
+		v.Codigo,
+		v.DataVenda,
+		v.Codigo_Cliente,
+		c.Descricao Cliente,
+		p.Descricao Produto,
+		p.Preco,
+		iv.Codigo_Produto,
+		iv.Quantidade,
+		iv.valor,
+		v.valor Valor_Total
+	  FROM dbo.Venda v
+	inner join
+		dbo.ItensVendas iv on iv.codigo_venda = v.Codigo
+	inner join
+		dbo.Cliente c on c.Codigo = v.codigo_cliente
+	inner join
+		dbo.Produto p on p.Codigo = iv.codigo_produto
+	where	
+		v.Codigo = @CodigoVenda
+else	
+	SELECT 
+		v.Codigo,
+		v.DataVenda,
+		v.Codigo_Cliente,
+		c.Descricao Cliente,
+		p.Descricao Produto,
+		p.Preco,
+		iv.Codigo_Produto,
+		iv.Quantidade,
+		iv.valor,
+		v.valor Valor_Total
+	  FROM dbo.Venda v
+	inner join
+		dbo.ItensVendas iv on iv.codigo_venda = v.Codigo
+	inner join
+		dbo.Cliente c on c.Codigo = v.codigo_cliente
+	inner join
+		dbo.Produto p on p.Codigo = iv.codigo_produto
+	where	
+		v.DataVenda between @DataIni and @DataFim 
+return
+END
+GO
+
+USE [dbTeste]
+GO
+
+/****** Object:  Trigger [dbo].[tgrAtualizaEstoque]    Script Date: 07/08/2018 03:17:01 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+CREATE TRIGGER [dbo].[tgrAtualizaEstoque]
+   ON  [dbo].[ItensVendas] 
+   FOR insert
+AS 
+BEGIN
+	declare 
+		@CodigoProduto int,
+		@Quantidade int;
+
+
+	select @CodigoProduto = Codigo_Produto, @Quantidade = Quantidade 
+	from inserted
+
+	UPDATE Produto SET ESTOQUE = ESTOQUE - @Quantidade  where Codigo = @CodigoProduto;
+	
+	SET NOCOUNT ON;
+
+END
+GO
+
+ALTER TABLE [dbo].[ItensVendas] ENABLE TRIGGER [tgrAtualizaEstoque]
+GO
+
